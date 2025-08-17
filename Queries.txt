@@ -1,0 +1,50 @@
+-- STEP 1: Top-Selling Products
+
+SELECT 
+    t.Name AS Track,
+    SUM(il.Quantity) AS Units_Sold,
+    ROUND(SUM(il.Quantity * il.UnitPrice), 2) AS Total_Revenue
+FROM InvoiceLine il
+JOIN Track t ON il.TrackId = t.TrackId
+GROUP BY t.TrackId
+ORDER BY Units_Sold DESC
+LIMIT 10;
+
+
+-- Revenue per Region (Country)
+
+SELECT 
+    c.Country,
+    ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS Total_Revenue
+FROM Invoice i
+JOIN Customer c ON i.CustomerId = c.CustomerId
+JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+GROUP BY c.Country
+ORDER BY Total_Revenue DESC;
+
+
+
+-- Monthly Sales Performance
+
+SELECT 
+    STRFTIME('%Y-%m', i.InvoiceDate) AS YearMonth,
+    ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS Monthly_Revenue
+FROM Invoice i
+JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+GROUP BY YearMonth
+ORDER BY YearMonth;
+
+
+-- Ranking Top Customers per Country
+
+SELECT 
+    c.Country,
+    c.CustomerId,
+    c.FirstName || ' ' || c.LastName AS CustomerName,
+    ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS Total_Spending,
+    RANK() OVER (PARTITION BY c.Country ORDER BY SUM(il.UnitPrice * il.Quantity) DESC) AS Rank_In_Country
+FROM Customer c
+JOIN Invoice i ON c.CustomerId = i.CustomerId
+JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+GROUP BY c.Country, c.CustomerId
+ORDER BY c.Country, Rank_In_Country;
